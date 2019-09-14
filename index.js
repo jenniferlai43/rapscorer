@@ -4,7 +4,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const revai = require('revai-node-sdk');
-const fs = require('fs');
 
 const app = express();
 
@@ -12,6 +11,7 @@ const port = 8000;
 
 app.set('view engine', 'ejs');
 
+app.use(express.static('./static'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false}));
 
