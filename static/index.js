@@ -4,10 +4,17 @@
  * https://www.rev.ai/docs/streaming
  */
 
+const EXACT_RHYME_BONUS = 10;
+const NEAR_RHYME_BONUS = 5;
+var clientPoints = 0;
+
 function doStream() {
     statusElement = document.getElementById("status");
     tableElement = document.getElementById("messages");
+    scoreElement = document.getElementById("score");
     finalsReceived = 0;
+    firstWord = null;
+    secondWord = null;
     currentCell = null;
     audioContext = new (window.AudioContext || window.WebkitAudioContext)();
 
@@ -76,7 +83,7 @@ function onClose(event) {
  * https://www.rev.ai/docs/streaming#section/Rev.ai-to-Client-Response
  * @param {MessageEvent} event
  */
-function onMessage(event) {
+async function onMessage(event) {
     var data = JSON.parse(event.data);
     switch (data.type){
         case "connected":
@@ -86,11 +93,24 @@ function onMessage(event) {
             currentCell.innerHTML = parseResponse(data);
             break;
         case "final":
-            currentCell.innerHTML = parseResponse(data);
-            if (data.type == "final"){
+            var cellData = parseResponse(data);
+            currentCell.innerHTML = cellData;
+            if (data.type == "final" && data.elements.length > 0){
                 finalsReceived++;
                 var row = tableElement.insertRow(finalsReceived);
                 currentCell = row.insertCell(0);
+                if (firstWord == null) {
+                    firstWord = cellData.split(" ").splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+                    console.log(firstWord);
+                }
+                else if (firstWord != null && secondWord == null) {
+                    secondWord = cellData.split(" ").splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+                    console.log('Comparing ' + firstWord + ' with ' + secondWord);
+                    await Promise.all([getExactRhymeScore(firstWord, secondWord), getNearRhymeScore(firstWord, secondWord)]);
+                    score.innerHTML = clientPoints;
+                    firstWord = null;
+                    secondWord = null;
+                }
             }
             break;
         default:
@@ -141,4 +161,28 @@ function resetDisplay() {
     }
     var row = tableElement.insertRow(0);
     currentCell = row.insertCell(0);
+}
+
+async function getExactRhymeScore(word1, word2) {
+    await fetch(`https://api.datamuse.com/words?rel_rhy=${word1}`).then(async (response)=> {
+        let data = await response.json()
+        var exactResult = new Map(data.map(i => [i.word, i.score])); // map word -> score
+        console.log(exactResult);
+        if (exactResult.has(word2)) {
+            console.log('Exact rhyme');
+            clientPoints += EXACT_RHYME_BONUS;
+        }
+    });
+}
+
+async function getNearRhymeScore(word1, word2) {
+    await fetch(`https://api.datamuse.com/words?rel_nry=${word1}`).then(async (response)=> {
+        let data = await response.json()
+        var nearResult = new Map(data.map(i => [i.word, i.score])); // map word -> score
+        console.log(nearResult);
+        if (nearResult.has(word2)) {
+            console.log('Near rhyme');
+            clientPoints += NEAR_RHYME_BONUS;
+        }
+    });
 }
