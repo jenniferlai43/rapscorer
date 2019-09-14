@@ -3,6 +3,7 @@
  * connection is closed. Follows the protocol specficied in our documentation:
  * https://www.rev.ai/docs/streaming
  */
+
 function doStream() {
     statusElement = document.getElementById("status");
     tableElement = document.getElementById("messages");
@@ -10,11 +11,11 @@ function doStream() {
     currentCell = null;
     audioContext = new (window.AudioContext || window.WebkitAudioContext)();
 
-    const access_token = process.env.REV_ACCESS_TOKEN;
-    const content_type = 'audio/x-raw;layout=interleaved;rate=${audioContext.sampleRate};format=S16LE;channels=1';
+    const access_token = '02_93zrT-hS055hgDOUgFJA833ixTMSt8njca-nDdfqudyLbOm_4KHdvayppkY-K1XSPIIeEmLtBrrqbPG1a4zPn1KH6w';
+    const content_type = `audio/x-raw;layout=interleaved;rate=${audioContext.sampleRate};format=S16LE;channels=1`;
     const baseUrl = 'wss://api.rev.ai/speechtotext/v1alpha/stream';
-    const query = 'access_token=${access_token}&content_type=${content_type}';
-    websocket = new WebSocket('${baseUrl}?${query}');
+    const query = `access_token=${access_token}&content_type=${content_type}`;
+    websocket = new WebSocket(`${baseUrl}?${query}`);
 
     websocket.onopen = onOpen;
     websocket.onclose = onClose;
@@ -67,7 +68,7 @@ function onOpen(event) {
  * @param {CloseEvent} event
  */
 function onClose(event) {
-    statusElement.innerHTML = 'Closed with ${event.code}: ${event.reason}';
+    statusElement.innerHTML = `Closed with ${event.code}: ${event.reason}`;
 }
 
 /**
@@ -79,7 +80,7 @@ function onMessage(event) {
     var data = JSON.parse(event.data);
     switch (data.type){
         case "connected":
-            statusElement.innerHTML ='Connected, job id is ${data.id}';
+            statusElement.innerHTML =`Connected, job id is ${data.id}`;
             break;
         case "partial":
             currentCell.innerHTML = parseResponse(data);
@@ -127,7 +128,7 @@ function processAudioEvent(e) {
 function parseResponse(response) {
     var message = "";
     for (var i = 0; i < response.elements.length; i++){
-        message += response.type == "final" ?  response.elements[i].value : '${response.elements[i].value} ';
+        message += response.type == "final" ?  response.elements[i].value : `${response.elements[i].value} `;
     }
     return message;
 }
