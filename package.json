@@ -1,0 +1,28 @@
+{
+  "name": "rapscorer",
+  "version": "1.0.0",
+  "description": "score ur raps xD",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jenniferlai43/rapscorer.git"
+  },
+  "author": "jennifer lai, andrew lu, tina shi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jenniferlai43/rapscorer/issues"
+  },
+  "homepage": "https://github.com/jenniferlai43/rapscorer#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "dotenv": "^8.1.0",
+    "ejs": "^2.7.1",
+    "express": "^4.17.1",
+    "fs": "0.0.1-security",
+    "revai-node-sdk": "^2.1.0"
+  }
+}
