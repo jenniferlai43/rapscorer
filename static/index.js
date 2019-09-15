@@ -21,6 +21,10 @@ var firstWord = null;
 var secondWord = null;
 var currentCell = null;
 
+var comboMultiplier = 1;
+var comboCount = 0;
+var missCount = 0;
+
 var nameInputArea = document.getElementById('name-input');
 var roomInputEnterButton = document.getElementById('room-input-button');
 var roomInputArea = document.getElementById('room-input');
@@ -159,7 +163,6 @@ async function onMessage(event) {
             currentCell.innerHTML = parseResponse(data);
             break;
         case 'final':
-            console.log(data);
             var cellData = parseResponse(data);
             if (data.type == 'final' && data.elements.length > 0 && cellData !== ""){
                 currentCell.innerHTML = cellData;
@@ -172,13 +175,19 @@ async function onMessage(event) {
                 console.log('dropping line');
                 socket.emit('line drop', {room: roomName, line: cellData});
                 if (firstWord == null) {
-                    firstWord = cellData.split(' ').splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,'');
+                    firstWord = cellData.split(' ').splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,'').toLowerCase();
                     console.log(firstWord);
                 }
                 else if (firstWord != null && secondWord == null) {
-                    secondWord = cellData.split(' ').splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,'');
+                    secondWord = cellData.split(' ').splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,'').toLowerCase();
                     console.log('Comparing ' + firstWord + ' with ' + secondWord);
+                    let prevScore = clientPoints;
                     await Promise.all([getExactRhymeScore(firstWord, secondWord), getNearRhymeScore(firstWord, secondWord)]);
+                    let newScore = clientPoints;
+                    if (newScore == prevScore) {
+                        comboCount = 0;
+                        comboMultiplier = 1;
+                    }
                     score.innerHTML = clientPoints;
                     resetSelfRound();
                 }
@@ -208,6 +217,11 @@ function oppositeColor() {
     else {
         return 'red';
     }
+}
+
+function calculateMultipliedPoints(pointValue) {
+    comboMultiplier += Math.floor(comboCount / 2) * .1;
+    return pointValue * comboMultiplier;
 }
 
 /**
@@ -253,10 +267,11 @@ async function getExactRhymeScore(word1, word2) {
     await fetch(`https://api.datamuse.com/words?rel_rhy=${word1}`).then(async (response)=> {
         let data = await response.json()
         var exactResult = new Map(data.map(i => [i.word, i.score])); // map word -> score
-        console.log(exactResult);
         if (exactResult.has(word2)) {
-            console.log('Exact rhyme');
-            clientPoints += EXACT_RHYME_BONUS;
+            comboCount++;
+            comboMultiplier += Math.floor(comboCount / 2) * .1;
+            console.log(comboMultiplier);
+            clientPoints += EXACT_RHYME_BONUS * comboMultiplier;
         }
     });
 }
@@ -265,10 +280,11 @@ async function getNearRhymeScore(word1, word2) {
     await fetch(`https://api.datamuse.com/words?rel_nry=${word1}`).then(async (response)=> {
         let data = await response.json()
         var nearResult = new Map(data.map(i => [i.word, i.score])); // map word -> score
-        console.log(nearResult);
         if (nearResult.has(word2)) {
-            console.log('Near rhyme');
-            clientPoints += NEAR_RHYME_BONUS;
+            comboCount++;
+            comboMultiplier += Math.floor(comboCount / 2) * .1;
+            console.log(comboMultiplier);
+            clientPoints += NEAR_RHYME_BONUS * comboMultiplier;
         }
     });
 }

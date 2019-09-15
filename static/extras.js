@@ -1,20 +1,7 @@
-
-var comboMultiplier = 1;
-var comboCount = 0;
-var missCount = 0;
 var ww = window.innerWidth;
 var wh = window.innerHeight;
 var gamePieces = [];
 
-function calculateMultipliedPoints(pointValue) {
-	if (missCount > 1) {
-		comboCount = 0;
-		comboMultiplier = 1;
-		missCount = 0;
-	}
-	comboMultiplier += Math.floor(comboCount / 2) * .1;
-	return pointValue * comboMultiplier;
-}
 
 window.onload = function() {
 	startGame();
