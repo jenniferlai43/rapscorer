@@ -107,7 +107,7 @@ function doStream() {
 function endStream() {
     if (websocket) {
         websocket.send('EOS');
-        websocket.close();
+        //websocket.close();
     }
     if (audioContext) {
         audioContext.close();
@@ -141,7 +141,7 @@ function onOpen(event) {
  * @param {CloseEvent} event
  */
 function onClose(event) {
-    finalsReceived++;
+    //finalsReceived++;
     statusElement.innerHTML = `Closed with ${event.code}: ${event.reason}`;
 }
 
@@ -160,29 +160,32 @@ async function onMessage(event) {
             currentCell.innerHTML = parseResponse(data);
             break;
         case 'final':
-            console.log(data);
-            var cellData = parseResponse(data);
-            currentCell.innerHTML = cellData;
-            if (data.type == 'final' && data.elements.length > 0){
-                console.log('line: ' + finalsReceived);
-                barCount++;
-                finalsReceived++;
-                var row = tableElement.insertRow(finalsReceived);
-                row.style.color = textColor;
-                currentCell = row.insertCell(0);
-                console.log('dropping line');
-                socket.emit('line drop', {room: roomName, line: cellData});
-                if (firstWord == null) {
-                    firstWord = cellData.split(' ').splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,'');
-                    console.log(firstWord);
+            if (data.type == 'final' && data.elements.length > 0) {
+                var cellData = parseResponse(data);
+                if (cellData !== "") {
+                    currentCell.innerHTML = cellData;
+                    barCount++;
+                    finalsReceived++;
+                    var row = tableElement.insertRow(finalsReceived);
+                    row.style.color = textColor;
+                    currentCell = row.insertCell(0);
+                    console.log('dropping line');
+                    socket.emit('line drop', {room: roomName, line: cellData});
+                    if (firstWord == null) {
+                        firstWord = cellData.split(' ').splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,'');
+                        console.log(firstWord);
+                    }
+                    else if (firstWord != null && secondWord == null) {
+                        secondWord = cellData.split(' ').splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,'');
+                        console.log('Comparing ' + firstWord + ' with ' + secondWord);
+                        await Promise.all([getExactRhymeScore(firstWord, secondWord), getNearRhymeScore(firstWord, secondWord)]);
+                        score.innerHTML = clientPoints;
+                        resetSelfRound();
+                    }
+                    endStream();
+                    doStream();
                 }
-                else if (firstWord != null && secondWord == null) {
-                    secondWord = cellData.split(' ').splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,'');
-                    console.log('Comparing ' + firstWord + ' with ' + secondWord);
-                    await Promise.all([getExactRhymeScore(firstWord, secondWord), getNearRhymeScore(firstWord, secondWord)]);
-                    score.innerHTML = clientPoints;
-                    resetSelfRound();
-                }
+                
                 if (barCount != 0 && barCount%4 == 0) {
                     console.log('Next person goes.');
                     endStream();
