@@ -42,8 +42,16 @@ io.on('connection', (socket) => {
   		socket.to(room).emit('print line', line);
   	});
 
-  	socket.on('turn finished', (room) => {
-    	socket.to(room).emit('start turn');
+  	socket.on('turn finished', ({room, name, score, round}) => {
+    	socket.to(room).emit('start turn', {opponent: name, score: score, round: round});
+  	});
+
+  	socket.on('calc winner', ({room, winner}) => {
+    	io.to(room).emit('render winner', winner);
+  	});
+
+  	socket.on('end game', ({room, winner}) => {
+    	io.to(room).emit('end game', winner);
   	});
 });
 
