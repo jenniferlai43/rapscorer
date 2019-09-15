@@ -2,35 +2,26 @@
 <html>
 
 <head>
-	<script src="/index.js"></script>
+	<link rel="stylesheet" type="text/css" href="/main.css">
 </head>
 
 <body>
-	<button id="streamButton" onclick="doStream()">Record</button>
-        <p id="status">Not Started</p>
-        <table id="messages"></table>
-	<!-- <audio id = "player" controls></audio>
-	<script>
-		const player = document.getElementById('player');
-
-		const handleSuccess = function(stream) {
-			const context = new AudioContext();
-			const source = context.createMediaStreamSource(stream);
-			const processor = context.createScriptProcessor(1024, 1, 1);
-
-			source.connect(processor);
-			processor.connect(context.destination);
-
-			processor.onaudioprocess = function(e) {
-				console.log(e.inputBuffer);
-			}
-		};
-
-		navigator.mediaDevices.getUserMedia({audio: true, video: false}).then(handleSuccess);
-	</script> -->
-	<div>
-		<p>Score: </p>
-		<p id="score">0</p>
+	<div id="intro">
+		<input type="text" id="name-input" placeholder="Enter rapper name...">
+		<input type="text" id="room-input" placeholder="Enter room name...">
+		<button id="room-input-button">Enter</button>
+	</div>
+	<div id="game" style="display: none;">
+		<h1 id="title"></h1>
+		<button id="streamButton" onclick="doStream()">Record</button>
+	        <p id="status">Not Started</p>
+	        <table id="messages"></table>
+		<div>
+			<p>Score: </p>
+			<p id="score">0</p>
+		</div>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="/index.js"></script>
 	</div>
 </body>
 

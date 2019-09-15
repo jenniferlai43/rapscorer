@@ -4,20 +4,86 @@
  * https://www.rev.ai/docs/streaming
  */
 
+const socket = io();
+
+const colors = ['red', 'blue'];
 const EXACT_RHYME_BONUS = 10;
 const NEAR_RHYME_BONUS = 5;
 var clientPoints = 0;
+var rapperName = null;
+var barCount = 0;
+var textColor = null;
+var currentColor = null;
+var playerCount = 0;
+var roomName = null;
+var finalsReceived = 1;
+var firstWord = null;
+var secondWord = null;
+var currentCell = null;
+
+var nameInputArea = document.getElementById('name-input');
+var roomInputEnterButton = document.getElementById('room-input-button');
+var roomInputArea = document.getElementById('room-input');
+var introContainer = document.getElementById('intro');
+var gameContainer = document.getElementById('game');
+var messageTable = document.getElementById('messages');
+
+var statusElement = document.getElementById('status');
+var tableElement = document.getElementById('messages');
+var scoreElement = document.getElementById('score');
+
+socket.on('display game', (players) => {
+    if (textColor == null) {
+        textColor = colors[players-1];
+        messageTable.style.color = textColor;
+    }
+    playerCount = players;
+    initGame();
+});
+
+socket.on('print line', (line) => {
+    var row = tableElement.insertRow(finalsReceived);
+    finalsReceived++;
+    row.style.color = oppositeColor();
+    currentCell = row.insertCell(0);
+    currentCell.innerHTML = line;
+    if (finalsReceived % 4 == 0) {
+        var row = tableElement.insertRow(finalsReceived);
+        finalsReceived++;
+        currentCell = row.insertCell(0);
+    }
+});
+
+socket.on('start turn', () => {
+    doStream();
+});
+
+roomInputEnterButton.addEventListener('click', () => {
+    var name = nameInputArea.value;
+    var room = roomInputArea.value;
+    if (name != '' && room != '') {
+        enterRoom(name, room);
+    }
+});
+
+function enterRoom(name, room) {
+    socket.emit('enter room', {name: name, room: room});
+    rapperName = name;
+    roomName = room;
+}
+
+function initGame() {
+    console.log('initializing game');
+    var title = document.getElementById('title');
+    title.innerHTML = rapperName + ", you are in room " + roomName;
+    introContainer.style.display = 'none';
+    gameContainer.style.display = 'block';
+    var row = tableElement.insertRow(0);
+    currentCell = row.insertCell(0);
+}
 
 function doStream() {
-    statusElement = document.getElementById("status");
-    tableElement = document.getElementById("messages");
-    scoreElement = document.getElementById("score");
-    finalsReceived = 0;
-    firstWord = null;
-    secondWord = null;
-    currentCell = null;
     audioContext = new (window.AudioContext || window.WebkitAudioContext)();
-
     const access_token = '02_93zrT-hS055hgDOUgFJA833ixTMSt8njca-nDdfqudyLbOm_4KHdvayppkY-K1XSPIIeEmLtBrrqbPG1a4zPn1KH6w';
     const content_type = `audio/x-raw;layout=interleaved;rate=${audioContext.sampleRate};format=S16LE;channels=1`;
     const baseUrl = 'wss://api.rev.ai/speechtotext/v1alpha/stream';
@@ -29,9 +95,9 @@ function doStream() {
     websocket.onmessage = onMessage;
     websocket.onerror = console.error;
 
-    var button = document.getElementById("streamButton");
+    var button = document.getElementById('streamButton');
     button.onclick = endStream;
-    button.innerHTML = "Stop";
+    button.innerHTML = 'Stop';
 }
 
 /**
@@ -40,16 +106,16 @@ function doStream() {
  */
 function endStream() {
     if (websocket) {
-        websocket.send("EOS");
+        websocket.send('EOS');
         websocket.close();
     }
     if (audioContext) {
         audioContext.close();
     }
 
-    var button = document.getElementById("streamButton");
+    var button = document.getElementById('streamButton');
     button.onclick = doStream;
-    button.innerHTML = "Record";
+    button.innerHTML = 'Record';
 }
 
 /**
@@ -58,7 +124,7 @@ function endStream() {
  */
 function onOpen(event) {
     resetDisplay();
-    statusElement.innerHTML = "Opened";
+    statusElement.innerHTML = 'Opened';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((micStream) => {
         audioContext.suspend();
         var scriptNode = audioContext.createScriptProcessor(4096, 1, 1 );
@@ -75,6 +141,7 @@ function onOpen(event) {
  * @param {CloseEvent} event
  */
 function onClose(event) {
+    finalsReceived++;
     statusElement.innerHTML = `Closed with ${event.code}: ${event.reason}`;
 }
 
@@ -86,37 +153,61 @@ function onClose(event) {
 async function onMessage(event) {
     var data = JSON.parse(event.data);
     switch (data.type){
-        case "connected":
+        case 'connected':
             statusElement.innerHTML =`Connected, job id is ${data.id}`;
             break;
-        case "partial":
+        case 'partial':
             currentCell.innerHTML = parseResponse(data);
             break;
-        case "final":
+        case 'final':
+            console.log(data);
             var cellData = parseResponse(data);
             currentCell.innerHTML = cellData;
-            if (data.type == "final" && data.elements.length > 0){
+            if (data.type == 'final' && data.elements.length > 0){
+                console.log('line: ' + finalsReceived);
+                barCount++;
                 finalsReceived++;
                 var row = tableElement.insertRow(finalsReceived);
+                row.style.color = textColor;
                 currentCell = row.insertCell(0);
+                console.log('dropping line');
+                socket.emit('line drop', {room: roomName, line: cellData});
                 if (firstWord == null) {
-                    firstWord = cellData.split(" ").splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+                    firstWord = cellData.split(' ').splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,'');
                     console.log(firstWord);
                 }
                 else if (firstWord != null && secondWord == null) {
-                    secondWord = cellData.split(" ").splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+                    secondWord = cellData.split(' ').splice(-1)[0].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,'');
                     console.log('Comparing ' + firstWord + ' with ' + secondWord);
                     await Promise.all([getExactRhymeScore(firstWord, secondWord), getNearRhymeScore(firstWord, secondWord)]);
                     score.innerHTML = clientPoints;
-                    firstWord = null;
-                    secondWord = null;
+                    resetSelfRound();
+                }
+                if (barCount != 0 && barCount%4 == 0) {
+                    console.log('Next person goes.');
+                    endStream();
+                    socket.emit('turn finished', roomName);
                 }
             }
             break;
         default:
             // We expect all messages from the API to be one of these types
-            console.error("Received unexpected message");
+            console.error('Received unexpected message');
             break;
+    }
+}
+
+function resetSelfRound() {
+    firstWord = null;
+    secondWord = null;
+}
+
+function oppositeColor() {
+    if (textColor == 'red') {
+        return 'blue';
+    }
+    else {
+        return 'red';
     }
 }
 
@@ -146,20 +237,16 @@ function processAudioEvent(e) {
 }
 
 function parseResponse(response) {
-    var message = "";
+    var message = '';
     for (var i = 0; i < response.elements.length; i++){
-        message += response.type == "final" ?  response.elements[i].value : `${response.elements[i].value} `;
+        message += response.type == 'final' ?  response.elements[i].value : `${response.elements[i].value} `;
     }
     return message;
 }
 
 function resetDisplay() {
-    finalsReceived = 0;
-    while(tableElement.hasChildNodes())
-    {
-        tableElement.removeChild(tableElement.firstChild);
-    }
-    var row = tableElement.insertRow(0);
+    var row = tableElement.insertRow(finalsReceived);
+    row.style.color = textColor;
     currentCell = row.insertCell(0);
 }
 
