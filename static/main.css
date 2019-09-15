@@ -20,7 +20,7 @@ body {
 	font-size: 300%;
 }
 
-#intro .white-trans-bg {
+.white-trans-bg {
 	background: rgba(255, 255, 255, 0.5);
 }
 
@@ -45,4 +45,12 @@ input, button {
 
 .lives-box > * {
 	margin: 5px;
+}
+
+.messages-box {
+	width: 500px;
+}
+
+#messages {
+	font-size: 30px;
 }

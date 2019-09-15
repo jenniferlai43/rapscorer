@@ -21,8 +21,7 @@ var firstWord = null;
 var secondWord = null;
 var currentCell = null;
 
-var lives = 1;
-
+var lives = 3;
 
 var comboMultiplier = 1;
 var comboCount = 0;
