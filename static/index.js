@@ -21,6 +21,8 @@ var firstWord = null;
 var secondWord = null;
 var currentCell = null;
 
+var sprite = null;
+
 var lives = 3;
 
 var comboMultiplier = 1;
@@ -48,6 +50,7 @@ socket.on('display game', (players) => {
     if (textColor == null) {
         textColor = colors[players-1];
         messageTable.style.color = textColor;
+        sprite = players - 1;
     }
     playerCount = players;
     initGame();
@@ -211,6 +214,14 @@ function endStream() {
  */
 function onOpen(event) {
     resetDisplay();
+    if (!sprite && !leftActive) {
+        leftActive = true;
+        rightActive = false;
+    }
+    else if (sprite && !rightActive) {
+        rightActive = true;
+        leftActive = false;
+    }
     // statusElement.innerHTML = 'Your turn to rap!';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((micStream) => {
         audioContext.suspend();
@@ -230,6 +241,14 @@ function onOpen(event) {
 function onClose(event) {
     //statusElement.innerHTML = `Closed with ${event.code}: ${event.reason}`;
     //statusElement.innerHTML = 'Wait your turn!';
+    if (!sprite && leftActive) {
+        leftActive = false;
+        rightActive = true;
+    }
+    else if (sprite && rightActive) {
+        rightActive = false;
+        leftActive = true;
+    }
 }
 
 /**

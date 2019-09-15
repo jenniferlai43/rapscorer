@@ -3,7 +3,7 @@
 
 <head>
 	<link rel="stylesheet" type="text/css" href="/main.css">
-<!-- 	<script src = "/extras.js"></script> -->
+	<script src = "/extras.js"></script>
 </head>
 
 <body>
@@ -17,23 +17,30 @@
 			</div>
 		</div>
 		<div class="main-stuff" id="game" hidden>
-			<h1 id="title"></h1>
-			<button id="streamButton" onclick="doStream()">Start Game</button>
-			<div class="score-box" style="display: flex">
-				<p>Score:</p>
-				<p id="score">0</p>
+
+			<div id = "left">
+				<div class="score-box" style="display: flex">
+					<p>Score:</p>
+					<p id="score">0</p>
+				</div>
+				<div>
+					<p id="round-winner"></p>
+				</div>
+				<div class="lives-box" style="display: flex">
+					<p>Lives:</p>
+					<p id="lives"></p>
+				</div>
 			</div>
-			<div>
-				<p id="round-winner"></p>
+
+			<div id = "center">
+				<h1 id="title"></h1>
+				<button id="streamButton" onclick="doStream()">Start Game</button>
+				<p id="status">Game has not started.</p>
+		        <div class="white-trans-bg messages-box">
+			        <table id="messages"></table>
+			    </div>
 			</div>
-			<div class="lives-box" style="display: flex">
-				<p>Lives:</p>
-				<p id="lives"></p>
-			</div>
-	        <p id="status">Game has not started.</p>
-	        <div class="white-trans-bg messages-box">
-		        <table id="messages"></table>
-		      </div>
+	        
 		    <!-- <button id="streamButton" onclick="resetGame()">Reset Game</button> -->
 			<script src="/socket.io/socket.io.js"></script>
 			<script src="/index.js"></script>

@@ -16,7 +16,8 @@ window.onload = function() {
 }
 
 window.onresize = function() {
-
+	gamePieces[0].resize("viewport", .1, 0);
+	gamePieces[1].resize("viewport", .9, 300);
 }
 
 function startGame() {
@@ -25,7 +26,7 @@ function startGame() {
 		"/assets/Robot_PNG/PNG_Animations/Robot1/01_idle/idle_000.png",
 		"image", 300);
 	gamePieces.push(leftPlayer);
-	var rightPlayer = new component(984, 993, window.innerWidth * .6, 200,
+	var rightPlayer = new component(984, 993, window.innerWidth * .9 - 300, 200,
 		"/assets/Robot_PNG/PNG_Animations/Robot3/01_idle/idle_000.png",
 		"image", 300);
 	gamePieces.push(rightPlayer);
@@ -38,7 +39,7 @@ var gameArea = {
 		this.canvas.width = window.innerWidth;
 		this.canvas.height = window.innerHeight;
 		this.context = this.canvas.getContext("2d");
-		document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+		document.body.insertBefore(this.canvas, document.body.childNodes[1]);
 		this.interval = setInterval(updateGameArea, 1000 / 60);
 	},
 	clear: function() {
@@ -66,7 +67,7 @@ function component(width, height, x, y, color, type, scale) {
 	this.width = this.scale * width;
 	this.height = this.scale * height;
 	this.x = x;
-	this.y = y;
+	this.y = window.innerHeight - 200 - this.height;
 	this.currFrame = 0;
 	switch(this.type) {
 		case "image":
@@ -97,6 +98,11 @@ function component(width, height, x, y, color, type, scale) {
 		if (type == "animation") {
 			this.width = this.scale * w;
 			this.height = this.scale * h;
+			this.y = window.innerHeight - 200 - this.height;
+		}
+		if (type == "viewport") {
+			this.x = window.innerWidth * w - h;
+			this.y = window.innerHeight - 200 - this.height
 		}
 	}
 	this.animate = function(path, frames, rate, w, h, flipped) {
