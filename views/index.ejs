@@ -9,31 +9,32 @@
 <body>
 	<div class="body-container">
 		<div id="intro">
-			<input type="text" id="name-input" placeholder="Enter rapper name...">
-			<input type="text" id="room-input" placeholder="Enter room name...">
-			<button id="room-input-button">Enter</button>
-		</div>
-		<div class="main-stuff">
-			<div id="game" style="display: none;">
-				<h1 id="title"></h1>
-				<button id="streamButton" onclick="doStream()">Start Game</button>
-				<div class="score-box" style="display: flex">
-					<p>Score:</p>
-					<p id="score">0</p>
-				</div>
-				<div>
-					<p id="round-winner"></p>
-				</div>
-				<div class="lives-box" style="display: flex">
-					<p>Lives:</p>
-					<p id="lives"></p>
-				</div>
-		        <p id="status">Game has not started.</p>
-		        <table id="messages"></table>
-			    <!-- <button id="streamButton" onclick="resetGame()">Reset Game</button> -->
-				<script src="/socket.io/socket.io.js"></script>
-				<script src="/index.js"></script>
+			<h1>Rap Battle!</h1>
+			<div class="white-trans-bg">
+				<input type="text" id="name-input" placeholder="Enter rapper name...">
+				<input type="text" id="room-input" placeholder="Enter room name...">
+				<button id="room-input-button">Enter</button>
 			</div>
+		</div>
+		<div class="main-stuff" id="game" hidden>
+			<h1 id="title"></h1>
+			<button id="streamButton" onclick="doStream()">Start Game</button>
+			<div class="score-box" style="display: flex">
+				<p>Score:</p>
+				<p id="score">0</p>
+			</div>
+			<div>
+				<p id="round-winner"></p>
+			</div>
+			<div class="lives-box" style="display: flex">
+				<p>Lives:</p>
+				<p id="lives"></p>
+			</div>
+	        <p id="status">Game has not started.</p>
+	        <table id="messages"></table>
+		    <!-- <button id="streamButton" onclick="resetGame()">Reset Game</button> -->
+			<script src="/socket.io/socket.io.js"></script>
+			<script src="/index.js"></script>
 		</div>
 	</div>
 </body>

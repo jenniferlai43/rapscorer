@@ -164,8 +164,8 @@ function initGame() {
     lifeCountElement.innerHTML = lives;
     var title = document.getElementById('title');
     title.innerHTML = rapperName + ", you are in room " + roomName;
-    introContainer.style.display = 'none';
-    gameContainer.style.display = 'inline-block';
+    introContainer.setAttribute("hidden", true);
+    gameContainer.removeAttribute("hidden");
     var row = tableElement.insertRow(0);
     currentCell = row.insertCell(0);
 }
