@@ -6,7 +6,7 @@
 
 const socket = io();
 
-const colors = ['red', 'blue'];
+const colors = ['purple', 'blue'];
 const EXACT_RHYME_BONUS = 10;
 const NEAR_RHYME_BONUS = 5;
 var clientPoints = 0;
@@ -21,9 +21,14 @@ var firstWord = null;
 var secondWord = null;
 var currentCell = null;
 
+var lives = 1;
+
+
 var comboMultiplier = 1;
 var comboCount = 0;
 var missCount = 0;
+
+var currentRound = 0;
 
 var nameInputArea = document.getElementById('name-input');
 var roomInputEnterButton = document.getElementById('room-input-button');
@@ -31,6 +36,10 @@ var roomInputArea = document.getElementById('room-input');
 var introContainer = document.getElementById('intro');
 var gameContainer = document.getElementById('game');
 var messageTable = document.getElementById('messages');
+var roundWinnerElement = document.getElementById('round-winner');
+var lifeCountElement = document.getElementById('lives');
+
+var button = document.getElementById('streamButton');
 
 var statusElement = document.getElementById('status');
 var tableElement = document.getElementById('messages');
@@ -46,6 +55,8 @@ socket.on('display game', (players) => {
 });
 
 socket.on('print line', (line) => {
+    statusElement.innerHTML = 'Wait your turn!';
+    button.disabled = true;
     var row = tableElement.insertRow(finalsReceived);
     finalsReceived++;
     row.style.color = oppositeColor();
@@ -58,8 +69,65 @@ socket.on('print line', (line) => {
     }
 });
 
-socket.on('start turn', () => {
-    doStream();
+socket.on('start turn', ({opponent, score, round}) => {
+    if (round == currentRound-1 && score != clientPoints) {
+        var winner;
+        console.log('comparing own ' + clientPoints + ' with opponents ' + score);
+        if (clientPoints > score) {
+            winner = rapperName;
+        }
+        else if (score > clientPoints) {
+            winner = opponent;
+        }
+        else {
+            winner = 'tie';
+        }
+        socket.emit('calc winner', {room: roomName, winner: winner});
+    }
+    else {
+        if (round == currentRound-1 && score == clientPoints) {
+            winner = 'tie';
+            socket.emit('calc winner', {room: roomName, winner: winner});
+        }
+        doStream();
+    }
+});
+
+socket.on('render winner', (winner) => {
+    var renderText;
+    console.log('render... ' + winner);
+    if (winner === rapperName) {
+        renderText = 'You won this round!';
+    }
+    else if (winner == 'tie') {
+        renderText = 'It was a tie!';
+        console.log('tie');
+    }
+    else {
+        renderText = 'You lost this round so -1 life. ):';
+        lives--;
+        lifeCountElement.innerHTML = lives;
+        if (lives == 0) {
+            endGame(winner);
+        }
+    }
+    roundWinnerElement.innerHTML = renderText;
+    roundWinnerElement.style.opacity = 1;
+
+    setTimeout(() => {
+        roundWinnerElement.style.opacity = 0;
+    }, 3000);
+});
+
+socket.on('end game', (winner) => {
+    endStream();
+    console.log('winner: ' + winner);
+    if (winner === rapperName) {
+        endGameSelf('win');
+    }
+    else {
+        endGameSelf('lose');
+    }
 });
 
 roomInputEnterButton.addEventListener('click', () => {
@@ -70,6 +138,21 @@ roomInputEnterButton.addEventListener('click', () => {
     }
 });
 
+function endGame(winner) {
+    socket.emit('end game', {room: roomName, winner: winner});
+}
+
+function endGameSelf(status) {
+    if (status === 'win') {
+        statusElement.style.color = 'green';
+        statusElement.innerHTML = 'Game over! You won!';
+    }
+    else {
+        statusElement.style.color = 'red';
+        statusElement.innerHTML = 'Game over! You lost.';
+    }
+}
+
 function enterRoom(name, room) {
     socket.emit('enter room', {name: name, room: room});
     rapperName = name;
@@ -78,10 +161,11 @@ function enterRoom(name, room) {
 
 function initGame() {
     console.log('initializing game');
+    lifeCountElement.innerHTML = lives;
     var title = document.getElementById('title');
     title.innerHTML = rapperName + ", you are in room " + roomName;
     introContainer.style.display = 'none';
-    gameContainer.style.display = 'block';
+    gameContainer.style.display = 'inline-block';
     var row = tableElement.insertRow(0);
     currentCell = row.insertCell(0);
 }
@@ -99,9 +183,9 @@ function doStream() {
     websocket.onmessage = onMessage;
     websocket.onerror = console.error;
 
-    var button = document.getElementById('streamButton');
     button.onclick = endStream;
-    button.innerHTML = 'Stop';
+    button.disabled = true;
+    //button.innerHTML = 'Stop';
 }
 
 /**
@@ -111,15 +195,15 @@ function doStream() {
 function endStream() {
     if (websocket) {
         websocket.send('EOS');
-        //websocket.close();
+        websocket.close();
     }
     if (audioContext) {
         audioContext.close();
     }
 
     var button = document.getElementById('streamButton');
-    button.onclick = doStream;
-    button.innerHTML = 'Record';
+    //utton.onclick = doStream;
+    button.innerHTML = 'Start Game';
 }
 
 /**
@@ -128,7 +212,7 @@ function endStream() {
  */
 function onOpen(event) {
     resetDisplay();
-    statusElement.innerHTML = 'Opened';
+    // statusElement.innerHTML = 'Your turn to rap!';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((micStream) => {
         audioContext.suspend();
         var scriptNode = audioContext.createScriptProcessor(4096, 1, 1 );
@@ -145,7 +229,8 @@ function onOpen(event) {
  * @param {CloseEvent} event
  */
 function onClose(event) {
-    statusElement.innerHTML = `Closed with ${event.code}: ${event.reason}`;
+    //statusElement.innerHTML = `Closed with ${event.code}: ${event.reason}`;
+    //statusElement.innerHTML = 'Wait your turn!';
 }
 
 /**
@@ -157,7 +242,8 @@ async function onMessage(event) {
     var data = JSON.parse(event.data);
     switch (data.type){
         case 'connected':
-            statusElement.innerHTML =`Connected, job id is ${data.id}`;
+            // statusElement.innerHTML =`Connected, job id is ${data.id}`;
+            statusElement.innerHTML = 'Your turn to rap!';
             break;
         case 'partial':
             currentCell.innerHTML = parseResponse(data);
@@ -194,7 +280,8 @@ async function onMessage(event) {
                 if (barCount != 0 && barCount%4 == 0) {
                     console.log('Next person goes.');
                     endStream();
-                    socket.emit('turn finished', roomName);
+                    socket.emit('turn finished', {room: roomName, name: rapperName, score: clientPoints, round: currentRound});
+                    currentRound++;
                 }
             }
             break;
@@ -211,11 +298,11 @@ function resetSelfRound() {
 }
 
 function oppositeColor() {
-    if (textColor == 'red') {
-        return 'blue';
+    if (textColor == colors[0]) {
+        return colors[1];
     }
     else {
-        return 'red';
+        return colors[0];
     }
 }
 
@@ -264,7 +351,7 @@ function resetDisplay() {
 }
 
 async function getExactRhymeScore(word1, word2) {
-    await fetch(`https://api.datamuse.com/words?rel_rhy=${word1}`).then(async (response)=> {
+    await fetch(`https://api.datamuse.com/words?rel_rhy=${word1}&sp=${word2[0]}*`).then(async (response)=> {
         let data = await response.json()
         var exactResult = new Map(data.map(i => [i.word, i.score])); // map word -> score
         if (exactResult.has(word2)) {
@@ -277,7 +364,7 @@ async function getExactRhymeScore(word1, word2) {
 }
 
 async function getNearRhymeScore(word1, word2) {
-    await fetch(`https://api.datamuse.com/words?rel_nry=${word1}`).then(async (response)=> {
+    await fetch(`https://api.datamuse.com/words?rel_nry=${word1}&sp=${word2[0]}*`).then(async (response)=> {
         let data = await response.json()
         var nearResult = new Map(data.map(i => [i.word, i.score])); // map word -> score
         if (nearResult.has(word2)) {

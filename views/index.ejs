@@ -3,26 +3,38 @@
 
 <head>
 	<link rel="stylesheet" type="text/css" href="/main.css">
-	<script src = "/extras.js"></script>
+<!-- 	<script src = "/extras.js"></script> -->
 </head>
 
 <body>
-	<div id="intro">
-		<input type="text" id="name-input" placeholder="Enter rapper name...">
-		<input type="text" id="room-input" placeholder="Enter room name...">
-		<button id="room-input-button">Enter</button>
-	</div>
-	<div id="game" style="display: none;">
-		<h1 id="title"></h1>
-		<button id="streamButton" onclick="doStream()">Record</button>
-	        <p id="status">Not Started</p>
-	        <table id="messages"></table>
-		<div>
-			<p>Score: </p>
-			<p id="score">0</p>
+	<div class="body-container">
+		<div id="intro">
+			<input type="text" id="name-input" placeholder="Enter rapper name...">
+			<input type="text" id="room-input" placeholder="Enter room name...">
+			<button id="room-input-button">Enter</button>
 		</div>
-		<script src="/socket.io/socket.io.js"></script>
-		<script src="/index.js"></script>
+		<div class="main-stuff">
+			<div id="game" style="display: none;">
+				<h1 id="title"></h1>
+				<button id="streamButton" onclick="doStream()">Start Game</button>
+				<div class="score-box" style="display: flex">
+					<p>Score:</p>
+					<p id="score">0</p>
+				</div>
+				<div>
+					<p id="round-winner"></p>
+				</div>
+				<div class="lives-box" style="display: flex">
+					<p>Lives:</p>
+					<p id="lives"></p>
+				</div>
+		        <p id="status">Game has not started.</p>
+		        <table id="messages"></table>
+			    <!-- <button id="streamButton" onclick="resetGame()">Reset Game</button> -->
+				<script src="/socket.io/socket.io.js"></script>
+				<script src="/index.js"></script>
+			</div>
+		</div>
 	</div>
 </body>
 
