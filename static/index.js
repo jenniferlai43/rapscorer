@@ -25,6 +25,8 @@ var sprite = null;
 
 var lives = 3;
 
+var endGameBool = false;
+
 var comboMultiplier = 1;
 var comboCount = 0;
 var missCount = 0;
@@ -57,17 +59,21 @@ socket.on('display game', (players) => {
 });
 
 socket.on('print line', (line) => {
-    statusElement.innerHTML = 'Wait your turn!';
-    button.disabled = true;
-    var row = tableElement.insertRow(finalsReceived);
-    finalsReceived++;
-    row.style.color = oppositeColor();
-    currentCell = row.insertCell(0);
-    currentCell.innerHTML = line;
-    if (finalsReceived % 4 == 0) {
+    if (endGameBool === false){ 
+        statusElement.innerHTML = 'Wait your turn!';
+        button.disabled = true;
         var row = tableElement.insertRow(finalsReceived);
         finalsReceived++;
+        row.style.color = oppositeColor();
         currentCell = row.insertCell(0);
+        currentCell.innerHTML = line;
+        currentCell.scrollIntoView();
+        if (finalsReceived % 4 == 0) {
+            var row = tableElement.insertRow(finalsReceived);
+            finalsReceived++;
+            currentCell = row.insertCell(0);
+            currentCell.scrollIntoView();
+        }
     }
 });
 
@@ -91,8 +97,12 @@ socket.on('start turn', ({opponent, score, round}) => {
             winner = 'tie';
             socket.emit('calc winner', {room: roomName, winner: winner});
         }
-        doStream();
     }
+    setTimeout(() => {
+        if (endGameBool === false) {
+            doStream();
+        }
+    }, 2000);
 });
 
 socket.on('render winner', (winner) => {
@@ -109,7 +119,7 @@ socket.on('render winner', (winner) => {
         renderText = 'You lost this round so -1 life. ):';
         lives--;
         lifeCountElement.innerHTML = lives;
-        if (lives == 0) {
+        if (lives === 0) {
             endGame(winner);
         }
     }
@@ -122,7 +132,7 @@ socket.on('render winner', (winner) => {
 });
 
 socket.on('end game', (winner) => {
-    endStream();
+    endGameBool = true;
     console.log('winner: ' + winner);
     if (winner === rapperName) {
         endGameSelf('win');
@@ -130,6 +140,7 @@ socket.on('end game', (winner) => {
     else {
         endGameSelf('lose');
     }
+    endStream();
 });
 
 roomInputEnterButton.addEventListener('click', () => {
@@ -173,21 +184,23 @@ function initGame() {
 }
 
 function doStream() {
-    audioContext = new (window.AudioContext || window.WebkitAudioContext)();
-    const access_token = '02_93zrT-hS055hgDOUgFJA833ixTMSt8njca-nDdfqudyLbOm_4KHdvayppkY-K1XSPIIeEmLtBrrqbPG1a4zPn1KH6w';
-    const content_type = `audio/x-raw;layout=interleaved;rate=${audioContext.sampleRate};format=S16LE;channels=1`;
-    const baseUrl = 'wss://api.rev.ai/speechtotext/v1alpha/stream';
-    const query = `access_token=${access_token}&content_type=${content_type}`;
-    websocket = new WebSocket(`${baseUrl}?${query}`);
+    if (endGameBool === false) {
+        audioContext = new (window.AudioContext || window.WebkitAudioContext)();
+        const access_token = '02_93zrT-hS055hgDOUgFJA833ixTMSt8njca-nDdfqudyLbOm_4KHdvayppkY-K1XSPIIeEmLtBrrqbPG1a4zPn1KH6w';
+        const content_type = `audio/x-raw;layout=interleaved;rate=${audioContext.sampleRate};format=S16LE;channels=1`;
+        const baseUrl = 'wss://api.rev.ai/speechtotext/v1alpha/stream';
+        const query = `access_token=${access_token}&content_type=${content_type}`;
+        websocket = new WebSocket(`${baseUrl}?${query}`);
 
-    websocket.onopen = onOpen;
-    websocket.onclose = onClose;
-    websocket.onmessage = onMessage;
-    websocket.onerror = console.error;
+        websocket.onopen = onOpen;
+        websocket.onclose = onClose;
+        websocket.onmessage = onMessage;
+        websocket.onerror = console.error;
 
-    button.onclick = endStream;
-    button.disabled = true;
-    //button.innerHTML = 'Stop';
+        button.onclick = endStream;
+        button.disabled = true;
+        //button.innerHTML = 'Stop';
+    }
 }
 
 /**
@@ -265,6 +278,7 @@ async function onMessage(event) {
             break;
         case 'partial':
             currentCell.innerHTML = parseResponse(data);
+            currentCell.scrollIntoView();
             break;
         case 'final':
             var cellData = parseResponse(data);
@@ -276,6 +290,7 @@ async function onMessage(event) {
                 var row = tableElement.insertRow(finalsReceived);
                 row.style.color = textColor;
                 currentCell = row.insertCell(0);
+                currentCell.scrollIntoView();
                 console.log('dropping line');
                 socket.emit('line drop', {room: roomName, line: cellData});
                 if (firstWord == null) {
