@@ -24,6 +24,6 @@
     "express": "^4.17.1",
     "fs": "0.0.1-security",
     "revai-node-sdk": "^2.1.0",
-    "socket.io": "^2.2.0"
+    "socket.io": "^2.5.0"
   }
 }
